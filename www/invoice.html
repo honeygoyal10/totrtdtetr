@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1">
+
+<title>Invoice Entry</title>
+
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+rel="stylesheet">
+
+<!-- JSZip: needed to auto-extract .json from an uploaded .zip file -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d6efd">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+</head>
+
+<body>
+
+<div class="container mt-4">
+
+<h3 class="text-center">
+
+Invoice Entry
+
+</h3>
+
+<hr>
+
+<div class="card shadow border-primary">
+
+    <div class="card-body">
+
+        <div class="row align-items-end">
+
+            <div class="col-md-3 col-6">
+                <label class="form-label fw-bold">Order No</label>
+                <input id="orderNo" class="form-control" placeholder="Enter Order No" autofocus>
+            </div>
+
+            <div class="col-md-9 col-12">
+                <small id="orderFillStatus" class="text-muted d-block mt-2 mt-md-0">Enter an Order No to fill available order data.</small>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="container mt-3">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Seller Details</h5>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <label class="form-label">Seller Company</label>
+
+                    <select id="sellerParty" class="form-select">
+
+                        <option value="">Select Company</option>
+
+                        <option value="SHRI JAIBABA CASTING PVT LTD">
+                            SHRI JAIBABA CASTING PVT LTD
+                        </option>
+
+                        <option value="SHRI JAIBABA DIVYA TRADING LLP">
+                            SHRI JAIBABA DIVYA TRADING LLP
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">GSTIN</label>
+                    <input id="sellerGST" class="form-control" readonly>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label">POS</label>
+                    <input id="sellerPOS" class="form-control" readonly>
+                </div>
+
+            </div>
+
+            <div class="row mt-3">
+
+                <div class="col-md-8">
+                    <label class="form-label">Address</label>
+
+                    <textarea
+                        id="sellerAddress"
+                        class="form-control"
+                        rows="2"
+                        readonly></textarea>
+
+                </div>
+				
+
+                <div class="col-md-2">
+                    <label class="form-label">State</label>
+                    <input id="sellerState" class="form-control" readonly>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">PIN</label>
+                    <input id="sellerPIN" class="form-control" readonly>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Buyer Details</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <label>Buyer Party</label>
+                <input id="buyerParty" class="form-control" list="partyMasterList" autocomplete="off" placeholder="Type to search Party">
+            </div>
+
+            <div class="col-md-3">
+                <label>GSTIN</label>
+                <input id="buyerGST" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-3">
+                <label>POS</label>
+                <input id="buyerPOS" class="form-control" readonly>
+            </div>
+
+        </div>
+
+        <div class="row mt-3">
+
+            <div class="col-md-8">
+                <label>Address</label>
+                <textarea id="buyerAddress" rows="2" class="form-control" readonly></textarea>
+            </div>
+			<div class="col-md-4">
+    <label>LOC</label>
+    <input id="buyerLoc" class="form-control">
+</div>
+
+            <div class="col-md-2">
+                <label>State</label>
+                <input id="buyerState" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>PIN</label>
+                <input id="buyerPIN" class="form-control" readonly>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Dispatch -->
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Dispatch From</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <label>Dispatch Party</label>
+                <input id="dispatchParty" class="form-control" list="partyMasterList" autocomplete="off" placeholder="Type to search Party">
+            </div>
+
+            <div class="col-md-3">
+                <label>GSTIN</label>
+                <input id="dispatchGST" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-3">
+                <label>POS</label>
+                <input id="dispatchPOS" class="form-control" readonly>
+            </div>
+
+        </div>
+
+        <div class="row mt-3">
+
+            <div class="col-md-8">
+                <label>Address</label>
+                <textarea id="dispatchAddress" rows="2" class="form-control" readonly></textarea>
+            </div>
+<div class="col-md-4">
+    <label>LOC</label>
+    <input id="dispatchLoc" class="form-control">
+</div>
+
+            <div class="col-md-2">
+                <label>State</label>
+                <input id="dispatchState" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>PIN</label>
+                <input id="dispatchPIN" class="form-control" readonly>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Ship To -->
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-warning">
+        <h5 class="mb-0">Ship To</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <label>Ship To Party</label>
+                <input id="shipParty" class="form-control" list="partyMasterList" autocomplete="off" placeholder="Type to search Party">
+            </div>
+
+            <div class="col-md-3">
+                <label>GSTIN</label>
+                <input id="shipGST" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-3">
+                <label>POS</label>
+                <input id="shipPOS" class="form-control" readonly>
+            </div>
+
+        </div>
+
+        <div class="row mt-3">
+
+            <div class="col-md-8">
+                <label>Address</label>
+                <textarea id="shipAddress" rows="2" class="form-control" readonly></textarea>
+            </div>
+<div class="col-md-4">
+    <label>LOC</label>
+    <input id="shipLoc" class="form-control">
+</div>
+            <div class="col-md-2">
+                <label>State</label>
+                <input id="shipState" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>PIN</label>
+                <input id="shipPIN" class="form-control" readonly>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">Invoice Details</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-3">
+                <label class="form-label">Invoice No</label>
+                <input id="invoiceNo" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Invoice Date</label>
+                <input id="invoiceDate" type="date" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Reference No</label>
+                <input id="referenceNo" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Reference Date</label>
+                <input id="referenceDate" type="date" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Distance (KM)</label>
+                <input id="distance" type="number" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Freight</label>
+                <input id="freight" type="text" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Remark</label>
+                <input id="remark" class="form-control">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="row mt-3">
+
+    <div class="col-md-3">
+        <label class="form-label">IRN No</label>
+        <input id="irnNo" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">ACK No</label>
+        <input id="ackNo" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">ACK Date</label>
+        <input id="ackDate" class="form-control" readonly>
+    </div>
+
+    <div class="col-md-3">
+        <label class="form-label">E-Way Bill No</label>
+        <input id="ewayBillNo" class="form-control" readonly>
+    </div>
+
+</div>
+
+<!-- Hidden field -->
+<input type="hidden" id="signedQRCode">
+
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">Transport Details</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-3">
+    <label>Transporter Name</label>
+
+    <input
+        type="text"
+        id="transporterName"
+        class="form-control"
+        list="transporterMasterList"
+        placeholder="Type Transporter Name">
+
+    <datalist id="transporterMasterList"></datalist>
+</div>
+
+<div class="col-md-2">
+    <label>Transporter ID</label>
+
+    <input
+        type="text"
+        id="transporterId"
+        class="form-control"
+        placeholder="Transporter ID">
+</div>
+
+            <div class="col-md-2">
+                <label>Vehicle No</label>
+                <input id="vehicleNo" class="form-control text-uppercase">
+            </div>
+
+            <div class="col-md-2">
+                <label>LR No</label>
+                <input id="lrNo" class="form-control">
+            </div>
+
+            <div class="col-md-3">
+                <label>LR Date</label>
+                <input id="lrDate" type="date" class="form-control">
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Item Details : Mobile-friendly card layout -->
+<div class="card shadow mt-3">
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Item Details</h5>
+        <button type="button" class="btn btn-light btn-sm" onclick="addItemRow()">+ Add Item</button>
+    </div>
+    <div class="card-body">
+        <div id="itemBody" class="row g-3">
+        </div>
+    </div>
+</div>
+
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Invoice Summary</h5>
+    </div>
+
+    <div class="card-body">
+
+        <div class="row">
+
+            <div class="col-md-2">
+                <label>Assessable</label>
+                <input id="assVal" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>CGST</label>
+                <input id="cgstVal" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>SGST</label>
+                <input id="sgstVal" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>IGST</label>
+                <input id="igstVal" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-2">
+                <label>Other Charges</label>
+                <input
+                    id="otherCharges"
+                    class="form-control"
+                    type="number"
+                    value="0">
+            </div>
+
+            <div class="col-md-2">
+                <label>Round Off</label>
+                <input
+                    id="roundOff"
+                    class="form-control"
+                    type="number"
+                    value="0">
+            </div>
+
+        </div>
+
+        <div class="row mt-3">
+
+            <div class="col-md-3 offset-md-9">
+
+                <label class="fw-bold">
+                    Invoice Total
+                </label>
+
+                <input
+                    id="totInvVal"
+                    class="form-control fw-bold fs-5"
+                    readonly>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card shadow mt-3">
+
+    <div class="card-body">
+
+        <div class="row g-2">
+
+            <div class="col-6 col-md-2">
+                <button
+                    id="btnSave"
+                    class="btn btn-success w-100">
+                    💾 Save
+                </button>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <button
+                    id="btnNew"
+                    class="btn btn-primary w-100">
+                    🆕 New
+                </button>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <button
+                    id="btnJSON"
+                    class="btn btn-warning w-100">
+                    📥 Download JSON
+                </button>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <button
+                    id="btnSync"
+                    class="btn btn-info w-100">
+                    🔄 Sync
+                </button>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <button
+                    id="btnPrint"
+                    class="btn btn-dark w-100">
+                    🖨 Print
+                </button>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <button
+                    id="btnTallyXML"
+                    class="btn btn-outline-primary w-100">
+                    📄 Tally XML
+                </button>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <button
+                    id="btnSendTally"
+                    class="btn btn-outline-success w-100">
+                    📡 Send to Tally
+                </button>
+            </div>
+
+        </div>
+		
+		
+		
+        <small id="syncStatus" class="text-muted d-block mt-2">
+            Checking offline data...
+        </small>
+
+    </div>
+
+</div>
+
+<div class="row mt-3">
+
+    <div class="col-md-8">
+        <label class="form-label">e-Invoice JSON / ZIP File</label>
+        <input
+            type="file"
+            id="jsonUpload"
+            class="form-control"
+            accept=".json,.zip">
+    </div>
+
+    <div class="col-md-4 d-flex align-items-end">
+        <button
+            id="btnUploadJSON"
+            class="btn btn-secondary w-100">
+            📤 Upload JSON / ZIP
+        </button>
+    </div>
+
+</div>
+
+
+
+<hr class="mt-4">
+
+<div class="card shadow mt-3">
+
+    <div class="card-header bg-dark text-white">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <h5 class="mb-0">
+                Saved Invoices
+            </h5>
+
+            <button
+                class="btn btn-warning btn-sm"
+                onclick="loadInvoiceHistory()">
+
+                Refresh
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <div class="card-body">
+
+        <div class="row mb-3">
+
+            <div class="col-md-4">
+
+                <input
+                    id="searchInvoice"
+                    class="form-control"
+                    placeholder="Search Invoice No / Party">
+
+            </div>
+
+        </div>
+
+        <div id="invoiceHistory">
+
+        </div>
+
+    </div>
+
+</div>
+
+<datalist id="partyMasterList"></datalist>
+<datalist id="itemMasterList"></datalist>
+
+<script src="config.js"></script>
+
+<script src="storage.js"></script>
+<script src="api.js"></script>
+<script src="sync.js"></script>
+<script src="calc.js"></script>
+
+<script src="json.js"></script>
+<script src="tally.js"></script>
+<script src="history.js"></script>
+<script src="print.js"></script>
+
+<script src="order-db.js"></script>
+<script src="order-autofill.js"></script>
+
+<script src="invoice.js"></script>
+</body>
+</html>

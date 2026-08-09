@@ -1,0 +1,12 @@
+{
+  "appId": "in.hamaridunia.orders",
+  "appName": "Orders & Invoices",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

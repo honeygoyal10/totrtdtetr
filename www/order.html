@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Order Dashboard</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f6feb">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --blue:#1f6feb;
+    --blue-dark:#164ea8;
+    --bg:#f0f2f5;
+    --card:#ffffff;
+    --ink:#1c2430;
+    --muted:#6b7684;
+    --green:#1f8a4c;
+    --amber:#b8790a;
+    --red:#c0392b;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,Roboto,Segoe UI,Arial,sans-serif;
+    background:var(--bg); color:var(--ink);
+    padding-bottom:80px;
+  }
+  header{
+    background:var(--blue); color:#fff;
+    padding:14px 16px calc(14px + env(safe-area-inset-top,0px));
+    position:sticky; top:0; z-index:20;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+  }
+  header h1{margin:0; font-size:18px; font-weight:600;}
+  .status-row{display:flex; align-items:center; gap:8px; margin-top:6px; font-size:12px; opacity:.9;}
+  .badge{padding:2px 8px; border-radius:20px; font-size:11px; font-weight:600;}
+  .badge-online{background:#1f8a4c;}
+  .badge-offline{background:#c0392b;}
+
+  .tabs{display:flex; background:var(--blue-dark);}
+  .tabs button{
+    flex:1; border:none; background:transparent; color:#dce8ff;
+    padding:10px 0; font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .tabs button.active{color:#fff; border-bottom:3px solid #fff;}
+
+  .toolbar{padding:10px 14px; display:flex; gap:8px; align-items:center;}
+  #searchBox{
+    flex:1; padding:10px 12px; border-radius:20px; border:1px solid #d7dce2;
+    background:#fff; font-size:14px;
+  }
+  #f_statusFilter,
+#f_item{
+    padding:8px;
+    border-radius:10px;
+    border:1px solid #d7dce2;
+    font-size:13px;
+    max-width:110px;
+}
+  #refreshBtn{
+    border:none; background:var(--card); border-radius:50%; width:38px; height:38px;
+    font-size:16px; box-shadow:0 1px 3px rgba(0,0,0,.15); cursor:pointer;
+  }
+
+  #statusMsg{
+    display:none; margin:0 14px 8px; padding:8px 12px; background:#fff3cd;
+    color:#856404; border-radius:10px; font-size:13px;
+  }
+
+  #cardList{padding:0 14px; display:flex; flex-direction:column; gap:10px;}
+  .order-card{
+    background:var(--card); border-radius:var(--radius); padding:10px 12px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08); cursor:pointer;
+    transition:transform .1s ease;
+  }
+  .order-card:active{transform:scale(.98);}
+  .card-top{display:flex; justify-content:space-between; align-items:center;}
+  .po-number{font-weight:700; font-size:14px; color:var(--blue);}
+  .party-name{font-size:13px; font-weight:600; margin-top:3px;}
+  .item-line{font-size:12px; color:var(--muted); margin-top:2px;}
+  .remark-line{font-size:11px; color:#9aa3ad; font-style:italic; margin-top:3px;}
+  .freight-line{font-size:11px; color:#9aa3ad; margin-top:3px;}
+  .card-bottom{
+    display:flex; justify-content:space-between; margin-top:8px;
+    font-size:12px; color:var(--muted); flex-wrap:wrap; gap:6px;
+  }
+  .card-bottom span:nth-child(2){font-weight:700; color:var(--ink);}
+  .status-tag{
+    background:#eef2ff; color:var(--blue); padding:2px 8px; border-radius:8px; font-weight:600;
+  }
+  .chip{padding:2px 8px; border-radius:12px; font-size:11px; font-weight:700; color:#fff;}
+  .chip-green{background:var(--green);}
+  .chip-amber{background:var(--amber);}
+  .chip-red{background:var(--red);}
+
+  .empty{padding:40px 20px; text-align:center; color:var(--muted); font-size:14px;}
+
+  #syncBadge{font-size:11px; color:var(--muted); text-align:center; padding:10px 0 4px;}
+
+  .fab{
+    position:fixed; right:20px; bottom:24px; width:56px; height:56px; border-radius:50%;
+    background:var(--blue); color:#fff; border:none; font-size:26px; line-height:56px;
+    box-shadow:0 4px 12px rgba(0,0,0,.25); cursor:pointer; z-index:30;
+  }
+
+  #formOverlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.4);
+    z-index:40; align-items:flex-end; justify-content:center;
+  }
+  .form-sheet{
+    background:#fff; width:100%; max-width:480px; border-radius:18px 18px 0 0;
+    padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    max-height:88vh; overflow-y:auto;
+  }
+  .form-sheet h2{margin:0 0 12px; font-size:17px;}
+  .form-row{margin-bottom:10px;}
+  .form-row label{display:block; font-size:12px; color:var(--muted); margin-bottom:4px;}
+  .form-row select, .form-row input{
+    width:100%; padding:10px; border-radius:10px; border:1px solid #d7dce2; font-size:14px;
+  }
+  .form-actions{display:flex; gap:10px; margin-top:14px;}
+  .form-actions button{
+    flex:1; padding:12px; border-radius:10px; border:none; font-size:15px; font-weight:600; cursor:pointer;
+  }
+  .btn-cancel{background:#eee; color:var(--ink);}
+  .btn-save{background:var(--blue); color:#fff;}
+
+  #summaryContainer{padding:0 14px 14px; display:flex; flex-direction:column; gap:10px;}
+  .summary-card{
+    background:var(--card); border-radius:var(--radius); padding:12px 14px;
+    box-shadow:0 1px 4px rgba(0,0,0,.08);
+  }
+  .summary-card-title{
+    font-size:14px; font-weight:700; color:var(--blue); margin-bottom:8px;
+    padding-bottom:8px; border-bottom:1px solid #eef1f4;
+  }
+  .summary-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:5px 0; font-size:13px;
+  }
+  .summary-row .label{color:var(--muted); font-weight:600;}
+  .summary-row .value{font-weight:700; color:var(--ink);}
+  .summary-row.balance .value.balance-pos{color:var(--green);}
+  .summary-row.balance .value.balance-neg{color:var(--red);}
+
+  .summary-tabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:12px;
+  }
+  .summary-tabs button{
+    flex:1;
+    border:none;
+    border-radius:10px;
+    padding:9px;
+    background:#e9eef7;
+    color:#1f6feb;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .summary-tabs button.active{
+    background:#1f6feb;
+    color:#fff;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Order Dashboard</h1>
+  <div class="status-row">
+    <span id="netBadge" class="badge badge-online">Online</span>
+    <span id="syncBadge">Never synced</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button id="tab-sales" class="active">Pending Sales</button>
+  <button id="tab-purchase">Pending Purchase</button>
+  <button id="tab-summary">Item Summary</button>
+</div>
+
+<div class="toolbar">
+  <input id="searchBox" placeholder="Search party, item or PO…">
+
+  <select id="f_statusFilter">
+    <option value="OPEN" selected>Open</option>
+    <option value="">All Status</option>
+    <option value="CLOSED">Closed</option>
+    <option value="PARTIAL">Partial</option>
+    <option value="PENDING">Pending</option>
+  </select>
+
+  <select id="f_item">
+    <option value="">All Items</option>
+  </select>
+
+  <button id="refreshBtn" title="Refresh">🔄</button>
+</div>
+
+
+<div id="statusMsg"></div>
+
+<div id="cardList"></div>
+
+<div id="summaryContainer" style="display:none;">
+    <div class="summary-tabs">
+        <button id="sum-tab-item" class="active">Item Summary</button>
+        <button id="sum-tab-po">Purchase Party</button>
+        <button id="sum-tab-so">Sales Party</button>
+    </div>
+    <div id="itemSummaryContainer"></div>
+    <div id="purchaseSummaryContainer" style="display:none;"></div>
+    <div id="salesSummaryContainer" style="display:none;"></div>
+</div>
+
+<button class="fab" id="fab">+</button>
+
+<div id="formOverlay">
+  <div class="form-sheet">
+    <h2 id="formTitle">New Order</h2>
+    <form id="orderForm">
+      <input type="hidden" id="f_editingPO">
+
+      <div class="form-row">
+        <label>PO / SO Number</label>
+        <input id="f_po" required>
+      </div>
+
+      <div class="form-row">
+        <label>Party</label>
+        <select id="f_party" required></select>
+      </div>
+
+      <div class="form-row">
+        <label>Item</label>
+        <select id="f_itemGuid" required></select>
+      </div>
+
+      <div class="form-row">
+        <label>Qty</label>
+        <input id="f_qty" type="number" step="0.001" required>
+      </div>
+
+      <div class="form-row">
+        <label>Rate</label>
+        <input id="f_rate" type="number" step="0.01" required>
+      </div>
+
+      <div class="form-row">
+        <label>Status</label>
+        <select id="f_status" required></select>
+      </div>
+
+      <div class="form-row">
+        <label>Destination</label>
+        <select id="f_dest"><option value="">—</option></select>
+      </div>
+
+      <div class="form-row">
+        <label>Remark</label>
+        <input id="f_remark">
+      </div>
+
+      <div class="form-row">
+        <label>Freight</label>
+        <input id="f_freight" type="number" step="0.01">
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" id="formClose">Cancel</button>
+        <button type="submit" class="btn-save">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="order-db.js"></script>
+<script src="order-sync.js"></script>
+<script src="order-app.js"></script>
+</body>
+</html>

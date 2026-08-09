@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Orders & Invoices</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0d6efd">
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#f5f7fb}
+    header{position:sticky;top:0;z-index:2;background:#0d6efd;color:#fff;padding:12px 16px 0;box-shadow:0 2px 8px #0003}
+    .header-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+    h1{font-size:18px;margin:0}.tabs{display:flex;gap:5px}.tabs button{border:0;background:transparent;color:#dce9ff;padding:10px 18px;font-size:15px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0}.tabs button.active{background:#fff;color:#0d6efd}
+    #serverToggle{display:inline-flex;align-items:center;gap:6px;border:1px solid #ffffff55;background:#ffffff22;color:#fff;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+    #serverToggle:active{background:#ffffff33}
+    #serverDot{width:8px;height:8px;border-radius:50%;background:#2ecc71;flex:0 0 auto}
+    #serverDot.offline{background:#e74c3c}
+    iframe{display:block;border:0;width:100%;height:calc(100vh - 110px);background:#f5f7fb}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>Orders & Invoices</h1>
+      <button id="serverToggle" title="Tap to switch server">
+        <span id="serverDot"></span>
+        <span id="serverLabel">server.hamaridunia.in</span>
+      </button>
+    </div>
+    <nav class="tabs" aria-label="Main navigation"><button class="active" data-page="order.html">Order</button><button data-page="invoice.html">Invoice</button></nav>
+  </header>
+  <iframe id="appFrame" title="Order" src="order.html"></iframe>
+  <script src="config.js"></script>
+  <script>
+    const frame=document.getElementById('appFrame');
+    document.querySelectorAll('.tabs button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('active',b===button));frame.title=button.textContent;frame.src=button.dataset.page;}));
+    if('serviceWorker'in navigator) navigator.serviceWorker.register('service-worker.js').catch(console.error);
+
+    // ---------- Server switch (top header, affects Order + Invoice both) ----------
+    function renderServerBadge(){
+      const s = getActiveServer();
+      document.getElementById('serverLabel').textContent = s.label;
+      document.getElementById('serverDot').classList.toggle('offline', !navigator.onLine);
+    }
+
+    // Server switch se pehle check: agar abhi offline-save kiye koi
+    // orders/writes "outbox" me pending hain (abhi tak un-synced), to
+    // pehle unhe current server par sync hone do - warna switch karne
+    // par wo galti se NAYE server ko bhej di jaayengi (data cross-server
+    // mix ho jaayega). Same-origin hone ki wajah se yahan seedha
+    // IndexedDB check kar sakte hain, bina iframe ke andar jaaye.
+    function countPendingOutbox() {
+      return new Promise((resolve) => {
+        const req = indexedDB.open("OrderDashboardDB");
+        req.onsuccess = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains("outbox")) { db.close(); resolve(0); return; }
+          const tx = db.transaction("outbox", "readonly");
+          const countReq = tx.objectStore("outbox").count();
+          countReq.onsuccess = () => { db.close(); resolve(countReq.result || 0); };
+          countReq.onerror = () => { db.close(); resolve(0); };
+        };
+        req.onerror = () => resolve(0);
+      });
+    }
+
+    document.getElementById('serverToggle').addEventListener('click', async function(){
+      const current = getActiveServerKey();
+      const nextKey = current === 'server1' ? 'server2' : 'server1';
+      const next = window.APP_SERVERS[nextKey];
+
+      const pendingCount = await countPendingOutbox();
+      if (pendingCount > 0) {
+        alert(
+          '⚠️ ' + pendingCount + ' offline order/entry abhi ' + window.APP_SERVERS[current].label +
+          ' ko sync hone ka wait kar rahi hai.\n\nPehle internet on karke inhe sync hone dein, ' +
+          'tabhi doosre server par switch karein - warna ye entries galat server par chali jaayengi.'
+        );
+        return;
+      }
+
+      if(!confirm('Switch server to ' + next.label + ' ?\n\nOrder aur Invoice dono is naye server se connect honge.'))
+        return;
+      setActiveServerKey(nextKey);
+      renderServerBadge();
+      frame.src = frame.src; // reload current tab so it picks up the new BASE_URL
+    });
+
+    window.addEventListener('online', renderServerBadge);
+    window.addEventListener('offline', renderServerBadge);
+    renderServerBadge();
+  </script>
+</body>
+</html>
